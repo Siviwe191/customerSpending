@@ -5,7 +5,7 @@ import { mockTransactions } from "../../../mockData";
 import { CategoryFilter } from "./CategoryFilter";
 import { fetchTransactions, type ApiTransactions } from "../services/dashboardApi";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 8;
 
 type TransactionSort = "date_asc" | "date_desc" | "amount_asc" | "amount_desc";
 
