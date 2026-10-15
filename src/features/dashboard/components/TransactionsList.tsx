@@ -190,7 +190,6 @@ export function TransactionsList({ customerId = 1 }: { customerId?: number }) {
                                         </th>
                                         <th>Merchant</th>
                                         <th>Category</th>
-                                        <th>Status</th>
                                         <th>
                                             <ColumnSort label="Amount" sort={sort} asc="amount_asc" desc="amount_desc" onSort={setSort} />
                                         </th>
