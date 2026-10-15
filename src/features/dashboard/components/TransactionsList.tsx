@@ -7,6 +7,71 @@ import { fetchTransactions, type ApiTransactions } from "../services/dashboardAp
 
 const PAGE_SIZE = 20;
 
+type TransactionSort = "date_asc" | "date_desc" | "amount_asc" | "amount_desc";
+
+function sortTransactions<T extends { date: string; amount: number }>(items: T[], sort: TransactionSort) {
+    return [...items].sort((a, b) => {
+        if (sort === "date_asc") return a.date.localeCompare(b.date) || a.amount - b.amount;
+        if (sort === "date_desc") return b.date.localeCompare(a.date) || b.amount - a.amount;
+        if (sort === "amount_asc") return a.amount - b.amount || a.date.localeCompare(b.date);
+        return b.amount - a.amount || b.date.localeCompare(a.date);
+    });
+}
+
+function SortChevron({ direction }: { direction: "up" | "down" }) {
+    return (
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+            <path
+                d={direction === "up" ? "M2 6.5 5 3.5 8 6.5" : "M2 3.5 5 6.5 8 3.5"}
+                stroke="currentColor"
+                strokeWidth="1.25"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
+function ColumnSort({
+    label,
+    sort,
+    asc,
+    desc,
+    onSort,
+}: {
+    label: string;
+    sort: TransactionSort;
+    asc: TransactionSort;
+    desc: TransactionSort;
+    onSort: (next: TransactionSort) => void;
+}) {
+    return (
+        <span className="tx-col-sort">
+            {label}
+            <span className="tx-chevrons">
+                <button
+                    type="button"
+                    className={`tx-chevron${sort === asc ? " is-active" : ""}`}
+                    aria-label={`Sort ${label} ascending`}
+                    aria-pressed={sort === asc}
+                    onClick={() => onSort(asc)}
+                >
+                    <SortChevron direction="up" />
+                </button>
+                <button
+                    type="button"
+                    className={`tx-chevron${sort === desc ? " is-active" : ""}`}
+                    aria-label={`Sort ${label} descending`}
+                    aria-pressed={sort === desc}
+                    onClick={() => onSort(desc)}
+                >
+                    <SortChevron direction="down" />
+                </button>
+            </span>
+        </span>
+    );
+}
+
 const money = new Intl.NumberFormat("en-ZA", {
     style: "currency",
     currency: "ZAR",
@@ -22,6 +87,7 @@ function formatWhen(value: string) {
 export function TransactionsList({ customerId = 1 }: { customerId?: number }) {
     const [range, setRange] = useState<DateRange>(defaultDateRange);
     const [category, setCategory] = useState("");
+    const [sort, setSort] = useState<TransactionSort>("date_desc");
     const [offset, setOffset] = useState(0);
     const [data, setData] = useState<ApiTransactions | null>(null);
     const [loading, setLoading] = useState(true);
@@ -29,16 +95,19 @@ export function TransactionsList({ customerId = 1 }: { customerId?: number }) {
 
     useEffect(() => {
         setOffset(0);
-    }, [range.startDate, range.endDate, category]);
+    }, [range.startDate, range.endDate, category, sort]);
 
     useEffect(() => {
         if (!isApiConfigured()) {
-            const filtered = mockTransactions.filter((item) => {
-                if (range.startDate && item.date < range.startDate) return false;
-                if (range.endDate && item.date > range.endDate) return false;
-                if (category && item.category?.toLowerCase() !== category.toLowerCase()) return false;
-                return true;
-            });
+            const filtered = sortTransactions(
+                mockTransactions.filter((item) => {
+                    if (range.startDate && item.date < range.startDate) return false;
+                    if (range.endDate && item.date > range.endDate) return false;
+                    if (category && item.category?.toLowerCase() !== category.toLowerCase()) return false;
+                    return true;
+                }),
+                sort
+            );
             setData({
                 limit: PAGE_SIZE,
                 offset,
@@ -60,7 +129,7 @@ export function TransactionsList({ customerId = 1 }: { customerId?: number }) {
             offset,
             category.trim() || undefined,
             { startDate: range.startDate, endDate: range.endDate },
-            "date"
+            sort
         )
             .then((payload) => {
                 if (!cancelled) setData(payload);
@@ -78,7 +147,7 @@ export function TransactionsList({ customerId = 1 }: { customerId?: number }) {
         return () => {
             cancelled = true;
         };
-    }, [customerId, range.startDate, range.endDate, category, offset]);
+    }, [customerId, range.startDate, range.endDate, category, sort, offset]);
 
     const transactions = data?.transactions ?? [];
     const canGoBack = offset > 0;
@@ -116,10 +185,15 @@ export function TransactionsList({ customerId = 1 }: { customerId?: number }) {
                             <table className="tx-table">
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
+                                        <th>
+                                            <ColumnSort label="Date" sort={sort} asc="date_asc" desc="date_desc" onSort={setSort} />
+                                        </th>
                                         <th>Merchant</th>
                                         <th>Category</th>
-                                        <th>Amount</th>
+                                        <th>Status</th>
+                                        <th>
+                                            <ColumnSort label="Amount" sort={sort} asc="amount_asc" desc="amount_desc" onSort={setSort} />
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>

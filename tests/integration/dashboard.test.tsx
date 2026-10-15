@@ -66,10 +66,16 @@ describe("dashboard", () => {
 
         await user.click(screen.getByRole("button", { name: "All" }));
         expect(screen.getByText("Checkers")).toBeInTheDocument();
-        expect(screen.getByRole("button", { name: "Next" })).toBeEnabled();
-        await user.click(screen.getByRole("button", { name: "Next" }));
-        expect(screen.getByText("Pick n Pay")).toBeInTheDocument();
-        expect(screen.queryByText("Checkers")).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("button", { name: "Sort Date ascending" }));
+        let merchants = screen.getAllByRole("row").map((row) => row.textContent);
+        expect(merchants.findIndex((text) => text?.includes("Pick n Pay"))).toBeLessThan(
+            merchants.findIndex((text) => text?.includes("Checkers"))
+        );
+
+        await user.click(screen.getByRole("button", { name: "Sort Amount descending" }));
+        merchants = screen.getAllByRole("row").map((row) => row.textContent);
+        expect(merchants[1]).toContain("City Power");
     });
 
     it("shows on track, warning, and over budget together", async () => {

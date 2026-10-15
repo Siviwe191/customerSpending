@@ -1216,6 +1216,36 @@ h1 { font-size: 1.75rem; }
   color: #fff;
 }
 
+.tx-col-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tx-table th:last-child .tx-col-sort {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.tx-chevrons {
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 0;
+}
+
+.tx-chevron {
+  display: inline-flex;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.tx-chevron.is-active {
+  color: var(--primary);
+}
+
 .tx-table-wrap {
   overflow-x: auto;
 }
