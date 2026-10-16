@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { DateRangeFilter, defaultDateRange, formatDayLabel, presetForRange, type DateRange } from "../../../components/DateRangeFilter";
-import { isApiConfigured } from "../../../services/api";
+import { apiErrorMessage, isApiConfigured } from "../../../services/api";
 import { categoryCatalog, mockSpendingForRange } from "../../../mockData";
 import { fetchCategoryFilter, fetchSpendingByCategory, type ApiSpendingByCategory } from "../services/dashboardApi";
 import { categoryIcon } from "./CategoryFilter";
@@ -95,9 +95,8 @@ export function SpendingByCategory({ customerId = 1 }: { customerId?: number }) 
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                const message = err instanceof Error ? err.message : "";
                 setRows([]);
-                setError(message === "API unreachable" ? message : "Could not load spending by category.");
+                setError(apiErrorMessage(err, "Could not load spending by category."));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);

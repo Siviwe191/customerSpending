@@ -23,6 +23,18 @@ export function isApiConfigured(): boolean {
 
 type ApiError = Error & { status?: number; body?: unknown };
 
+export function apiErrorMessage(err: unknown, fallback: string): string {
+    const status = typeof err === "object" && err !== null && "status" in err ? Number((err as ApiError).status) : NaN;
+    const message = err instanceof Error ? err.message : "";
+    if (message === "API unreachable" || status === 0) return "API unreachable";
+    if (status === 401) return `${fallback} Not authorized (401).`;
+    if (status === 403) return `${fallback} Not allowed (403).`;
+    if (status === 404) return `${fallback} Not found (404).`;
+    if (Number.isFinite(status) && status >= 500) return `${fallback} Server error (${status}).`;
+    if (Number.isFinite(status) && status > 0) return `${fallback} (${status}).`;
+    return fallback;
+}
+
 export default async function request<T>(
     path: string,
     options: RequestInit & { json?: unknown } = {}

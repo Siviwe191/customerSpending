@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { mockProfile } from "../mockData";
-import { fetchME, isApiConfigured, type ApiCustomerProfile } from "../services/api";
+import { apiErrorMessage, fetchME, isApiConfigured, type ApiCustomerProfile } from "../services/api";
 
 export type ProfileView = {
     name: string;
@@ -34,6 +34,34 @@ function fromApi(payload: ApiCustomerProfile): ProfileView {
     };
 }
 
+const profileCache = new Map<number, ProfileView>();
+const profileRequests = new Map<number, Promise<ProfileView>>();
+
+export function resetCustomerProfileCache() {
+    profileCache.clear();
+    profileRequests.clear();
+}
+
+function loadCustomerProfile(customerId: number): Promise<ProfileView> {
+    const cached = profileCache.get(customerId);
+    if (cached) return Promise.resolve(cached);
+
+    const pending = profileRequests.get(customerId);
+    if (pending) return pending;
+
+    const request = fetchME(customerId)
+        .then((payload) => {
+            const profile = fromApi(payload);
+            profileCache.set(customerId, profile);
+            return profile;
+        })
+        .finally(() => {
+            profileRequests.delete(customerId);
+        });
+    profileRequests.set(customerId, request);
+    return request;
+}
+
 export function useCustomerProfile(customerId = 1) {
     const [profile, setProfile] = useState<ProfileView | null>(() => (isApiConfigured() ? null : fromMock()));
     const [loading, setLoading] = useState(() => isApiConfigured());
@@ -47,19 +75,26 @@ export function useCustomerProfile(customerId = 1) {
             return;
         }
 
+        const cached = profileCache.get(customerId);
+        if (cached) {
+            setProfile(cached);
+            setLoading(false);
+            setError(null);
+            return;
+        }
+
         let cancelled = false;
         setLoading(true);
         setError(null);
 
-        fetchME(customerId)
-            .then((payload) => {
-                if (!cancelled) setProfile(fromApi(payload));
+        loadCustomerProfile(customerId)
+            .then((profile) => {
+                if (!cancelled) setProfile(profile);
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                const message = err instanceof Error ? err.message : "";
                 setProfile(null);
-                setError(message === "API unreachable" ? message : "Could not load profile.");
+                setError(apiErrorMessage(err, "Could not load profile."));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);

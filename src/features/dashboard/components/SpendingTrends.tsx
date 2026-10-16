@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isApiConfigured } from "../../../services/api";
+import { apiErrorMessage, isApiConfigured } from "../../../services/api";
 import { mockTrends } from "../../../mockData";
 import { fetchSpendingTrends, type ApiSpendingTrends } from "../services/dashboardApi";
 
@@ -32,9 +32,8 @@ export function SpendingTrends({ customerId = 1 }: { customerId?: number }) {
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                const message = err instanceof Error ? err.message : "";
                 setData(null);
-                setError(message === "API unreachable" ? message : "Could not load monthly trends.");
+                setError(apiErrorMessage(err, "Could not load monthly trends."));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);

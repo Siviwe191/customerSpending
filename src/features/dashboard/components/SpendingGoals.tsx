@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { isApiConfigured } from "../../../services/api";
+import { apiErrorMessage, isApiConfigured } from "../../../services/api";
 import { mockGoals } from "../../../mockData";
 import { fetchSpendingGoals, type ApiSpendingGoals } from "../services/dashboardApi";
 
@@ -51,9 +51,8 @@ export function SpendingGoals({ customerId = 1 }: { customerId?: number }) {
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                const message = err instanceof Error ? err.message : "";
                 setData(null);
-                setError(message === "API unreachable" ? message : "Could not load spending goals.");
+                setError(apiErrorMessage(err, "Could not load spending goals."));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);

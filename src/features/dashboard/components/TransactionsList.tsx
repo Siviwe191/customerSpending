@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DateRangeFilter, defaultDateRange, formatDayLabel, type DateRange } from "../../../components/DateRangeFilter";
-import { isApiConfigured } from "../../../services/api";
+import { apiErrorMessage, isApiConfigured } from "../../../services/api";
 import { mockTransactions } from "../../../mockData";
 import { CategoryFilter } from "./CategoryFilter";
 import { fetchTransactions, type ApiTransactions } from "../services/dashboardApi";
@@ -136,9 +136,8 @@ export function TransactionsList({ customerId = 1 }: { customerId?: number }) {
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                const message = err instanceof Error ? err.message : "";
                 setData(null);
-                setError(message === "API unreachable" ? message : "Could not load transactions.");
+                setError(apiErrorMessage(err, "Could not load transactions."));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);

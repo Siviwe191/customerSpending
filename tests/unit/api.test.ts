@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import request, { fetchME, fetchSpendingSummary, getApiBaseUrl, isApiConfigured } from "../../src/services/api";
+import request, { apiErrorMessage, fetchME, fetchSpendingSummary, getApiBaseUrl, isApiConfigured } from "../../src/services/api";
 
 describe("API client", () => {
     afterEach(() => {
@@ -50,5 +50,15 @@ describe("API client", () => {
         }));
 
         await expect(request("/health")).rejects.toThrow("API unreachable");
+    });
+
+    it("keeps 401 and 500 as different messages", () => {
+        const fallback = "Could not load spending summary.";
+        expect(apiErrorMessage(Object.assign(new Error("API 401"), { status: 401 }), fallback)).toBe(
+            "Could not load spending summary. Not authorized (401).",
+        );
+        expect(apiErrorMessage(Object.assign(new Error("API 500"), { status: 500 }), fallback)).toBe(
+            "Could not load spending summary. Server error (500).",
+        );
     });
 });

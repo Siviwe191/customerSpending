@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChangeHint } from "../../../components/ChangeHint";
 import { DateRangeFilter, defaultDateRange, formatDayLabel, presetForRange } from "../../../components/DateRangeFilter";
-import { fetchSpendingSummary, isApiConfigured, type ApiSpendingSummary } from "../../../services/api";
+import { apiErrorMessage, fetchSpendingSummary, isApiConfigured, type ApiSpendingSummary } from "../../../services/api";
 import { mockSummaryForRange } from "../../../mockData";
 import { SummaryCard } from "./SummaryCard";
 import type { SpendingSummaryData } from "../types/types.ts";
@@ -74,9 +74,8 @@ export function SpendingSummary({
             })
             .catch((err: unknown) => {
                 if (cancelled) return;
-                const message = err instanceof Error ? err.message : "";
                 setData(null);
-                setError(message === "API unreachable" ? message : "Could not load spending summary.");
+                setError(apiErrorMessage(err, "Could not load spending summary."));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
